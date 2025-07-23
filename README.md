@@ -1,6 +1,6 @@
-# Curso de FastAPI - Eduardo Mendes (https://www.youtube.com/@Dunossauro)
+# Curso de FastAPI - [Eduardo Mendes](https://www.youtube.com/@Dunossauro)
 
-[Link da documentação do curso](https://fastapidozero.dunossauro.com/estavel)
+> [Link da documentação do curso](https://fastapidozero.dunossauro.com/estavel)
 
 --- 
 
@@ -115,3 +115,27 @@ def create_user(user: UserSchema):
 ```
 
 > Criar um fake DB apenas para testar a aplicação
+
+## Aula 04
+
+> Banco de Dados com SQLAlchemy e Gerenciando Migrações com Alembic
+
+
+
+```bash
+# adicionar o sqlalchemy ao nosso projeto
+poetry add sqlalchemy
+
+# adicionar o pydantic-settings para variáveis de ambiente
+poetry add pydantic-settings
+
+# adicionar o alembic para fazer as migrações do database
+poetry add alembic
+
+alembic init migrations
+
+alembic revision --autogenerate -m "mensagem da migração"
+
+# aplicando a migração de fato:
+alembic upgrade head
+```
