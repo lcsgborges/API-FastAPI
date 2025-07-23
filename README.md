@@ -6,6 +6,8 @@
 
 ## Aula 01
 
+> Configurações do ambiente de desenvolvimento
+
 ### Instalações: 
 
 * pyenv (gerenciador de versões do python)
@@ -43,3 +45,32 @@ poetry add --group dev pytest pytest-cov # testes
 poetry add --group dev taskipy # facilitar comandos
 
 ```
+
+## Aula 02
+
+> Fundamentos da WEB
+
+```bash 
+
+# para servir a aplicação local (LAN):
+
+fastapi dev <aplicacao> --host 0.0.0.0
+
+# linux: ip addr
+
+```
+
+Descobrindo o ip com Python:
+
+```python
+
+import socket 
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.connect(("8.8.8.8", 80))
+s.getsockname()[0]
+```
+
+> [Verbos/Métodos HTTP](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Methods)
+
+> [Status de Respostas HTTP](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Status)
