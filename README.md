@@ -74,3 +74,44 @@ s.getsockname()[0]
 > [Verbos/Métodos HTTP](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Methods)
 
 > [Status de Respostas HTTP](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Status)
+
+## Aula 03
+
+> Criando Rotas CRUD
+
+Criando um Schema (contrato) para user:
+
+> Primeiro, precisamos instalar o tipo EmailStr usado pelo Pydantic usando o seguinte comando:
+
+```bash
+poetry add "pydantic[email]"
+```
+
+> Depois, dentro de ```schemas.py```:
+
+```python
+from pydantic import BaseModel, EmailStr
+
+class UserSchema(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+
+
+class UserPublic(BaseModel):
+    username: str
+    email: EmailStr
+```
+
+> Dentro de ```app.py```:
+
+```python
+
+from .schemas.py import *
+
+@app.post('/users/', response_model=UserPublic)
+def create_user(user: UserSchema):
+    return user
+```
+
+> Criar um fake DB apenas para testar a aplicação
