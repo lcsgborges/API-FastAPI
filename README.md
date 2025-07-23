@@ -1,6 +1,6 @@
 # Curso de FastAPI - Eduardo Mendes (https://www.youtube.com/@Dunossauro)
 
-(Link)[https://fastapidozero.dunossauro.com/estavel]
+[Link da documentação do curso](https://fastapidozero.dunossauro.com/estavel)
 
 --- 
 
