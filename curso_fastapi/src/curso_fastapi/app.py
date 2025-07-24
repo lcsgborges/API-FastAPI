@@ -1,11 +1,18 @@
 from http import HTTPStatus
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from .database import get_session
+from .models import User
 from .schemas import Message, UserDB, UserList, UserPublic, UserSchema
 
-app = FastAPI()
+app = FastAPI(
+    title='API - Curso FastAPI',
+    description='Uma api feita durante o curso de FastAPI - Dunossauro',
+)
 
 database = []
 
@@ -36,17 +43,28 @@ def read_root_html():
 
 
 @app.post('/users/', response_model=UserPublic, status_code=HTTPStatus.CREATED)
-def create_user(user: UserSchema):
+def create_user(user: UserSchema, session: Session = Depends(get_session)):
     """
     Rota para criar um novo usuário
     """
-    # o model_dump() transforma o objeto em um dicionario
 
-    user_with_id = UserDB(id=len(database) + 1, **user.model_dump())
+    db_user = session.scalar(
+        select(User).where(User.username == user.username | User.email == user.email)
+    )
 
-    database.append(user_with_id)
+    if db_user:
+        if db_user.username == user.username:
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Username already exists')
 
-    return user_with_id
+        elif db_user.email == user.email:
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Email already exists')
+    new_user = User(username=user.username, email=user.email, password=user.password)
+
+    session.add(new_user)
+    session.commit()
+    session.refresh(new_user)
+
+    return new_user
 
 
 @app.get('/users/', response_model=UserList, status_code=HTTPStatus.OK)
