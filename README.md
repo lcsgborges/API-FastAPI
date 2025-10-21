@@ -21,6 +21,7 @@ poetry new --flat nome_projeto
 
 Organização da pasta após as configurações acima:
 
+```bash
 fastapi_course/
 ├── fastapi_course
 │   └── __init__.py
@@ -28,6 +29,7 @@ fastapi_course/
 ├── README.md
 └── tests
     └── __init__.py
+```
 
 Instalando a versão do python no projeto usando poetry:
 
