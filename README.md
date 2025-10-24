@@ -118,4 +118,11 @@ API é uma interface de comunicação entre aplicações. Frequentemente utiliza
 
 - Pydantic: a ideia é criar uma camada de documentação e de fazer a validação dos modelos de entrada e saída da nossa API.
 
+## Criando Rotas CRUD
 
+- **C**reate: (POST)
+- **R**ead: (GET)
+- **U**pdate: (PUT)
+- **D**elete: (DELETE)
+
+> Payload: é o corpo da mensagem que contém os dados reais sendo transferidos entre um cliente e um servidor
