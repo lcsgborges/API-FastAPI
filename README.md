@@ -177,3 +177,20 @@ alembic revision --autogenerate -m "mensagem"
 # aplicando a migração
 alembic upgrade head
 ```
+
+### Padrões da Sessão
+
+- **1. Repositório:** A sessão atua como um repositório
+- **2. Unidade de Trabalho:** Quando a sessão é aberta, todos os dados inseridos, modificados ou removidos não são feitos de imediato no banco de dados. Fazemos todas as modificações que queremos e executamos uma unica ação.
+- **3. Mapeamento de Identidade:** É criado cache para entidades que já estão carregadas na sessão para evitar conexões desnecessárias.
+
+
+### Gerenciamento de Dependências no FastAPI
+
+É uma forma declarativa de dizer ao FastAPI:
+
+"Antes de executar esta função, execute primeiro essa outra função e passe o resultado para o parâmetro"
+
+Isso ocorre por meio do objeto *Depends*
+
+
