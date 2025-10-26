@@ -177,4 +177,5 @@ pyrightconfig.json
 
 # Generated using ignr.py - github.com/Antrikshy/ignr.py
 
-.vscode
+# project stuff
+database.db
