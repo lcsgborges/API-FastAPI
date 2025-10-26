@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class Message(BaseModel):
@@ -15,10 +15,11 @@ class UserPublic(BaseModel):
     id: int
     username: str
     email: EmailStr
+    model_config = ConfigDict(from_attributes=True)
 
-
-class UserDB(UserSchema):
-    id: int
+    # model_config recebe uma configuração adicional com ConfigDict.
+    # dizemos para tentar encontrar os atributos de UserPublic no objeto
+    # passado em model_validate
 
 
 class UserList(BaseModel):

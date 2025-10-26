@@ -1,26 +1,21 @@
 from http import HTTPStatus
 
+from fastapi_course.schemas import UserPublic
 
-def test_root_must_retun_hello_world(client):
-    # Arrange -> conftest
 
-    # Act
+def test_root_must_return_hello_world(client):
     response = client.get('/')
-
-    # Assert
     assert response.json() == {'message': 'Hello World'}
-
     assert response.status_code == HTTPStatus.OK
 
 
 def test_exercicio_html_return_ola_mundo(client):
     response = client.get('/exercicio-html')
-
     assert 'olá mundo' in response.text
     assert response.status_code == HTTPStatus.OK
 
 
-def test_create_user_return_user_public(client):
+def test_create_user(client):
     response = client.post(
         '/users/',
         json={
@@ -39,37 +34,55 @@ def test_create_user_return_user_public(client):
     }
 
 
-def test_read_users(client):
+def test_create_user_already_exists(client, user):
+    response = client.post(
+        '/users/',
+        json={
+            'username': 'test',
+            'email': 'test@test.com',
+            'password': 'testtest',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {'detail': 'Username or Email already exists'}
+
+
+def test_read_users_without_users(client):
+    response = client.get('/users/')
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {'users': []}
+
+
+def test_read_users_with_users(client, user):
+    user_schema = UserPublic.model_validate(user).model_dump()
+
     response = client.get('/users/')
 
     assert response.status_code == HTTPStatus.OK
 
-    assert response.json() == {
-        'users': [
-            {'id': 1, 'username': 'alice', 'email': 'alice@example.com'},
-        ]
-    }
+    assert response.json() == {'users': [user_schema]}
 
 
-def test_read_user_with_id_success(client):
+def test_read_user_with_valid_id(client, user):
+    user_schema = UserPublic.model_validate(user).model_dump()
+
     response = client.get('/users/1')
 
     assert response.status_code == HTTPStatus.OK
 
-    assert response.json() == {
-        'id': 1,
-        'username': 'alice',
-        'email': 'alice@example.com',
-    }
+    assert response.json() == user_schema
 
 
-def test_read_user_with_id_failed(client):
+def test_read_user_with_invalid_id(client, user):
     response = client.get('/users/1000')
 
     assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
 
 
-def test_update_user_success(client):
+def test_update_user_with_valid_id(client, user):
     response = client.put(
         '/users/1',
         json={
@@ -79,16 +92,14 @@ def test_update_user_success(client):
         },
     )
 
+    user_schema = UserPublic.model_validate(user).model_dump()
+
     assert response.status_code == HTTPStatus.OK
 
-    assert response.json() == {
-        'id': 1,
-        'username': 'sofia',
-        'email': 'sofia@example.com',
-    }
+    assert response.json() == user_schema
 
 
-def test_update_user_failed(client):
+def test_update_user_with_invalid_id(client, user):
     response = client.put(
         '/users/1000',
         json={
@@ -99,21 +110,42 @@ def test_update_user_failed(client):
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
 
 
-def test_delete_user_success(client):
+def test_update_integrity_error(client, user):
+    client.post(
+        '/users/',
+        json={
+            'username': 'test2',
+            'email': 'test2@test.com',
+            'password': 'test2test2',
+        },
+    )
+
+    response = client.put(
+        f'/users/{user.id}',
+        json={
+            'username': 'test2',
+            'email': user.email,
+            'password': user.password,
+        },
+    )
+
+    response.status_code == HTTPStatus.CONFLICT
+    response.json() == {'detail': 'Username or Email already exists'}
+
+
+def test_delete_user_with_valid_id(client, user):
     response = client.delete('/users/1')
 
     assert response.status_code == HTTPStatus.OK
 
-    assert response.json() == {
-        'id': 1,
-        'username': 'sofia',
-        'email': 'sofia@example.com',
-    }
+    assert response.json() == {'message': 'User deleted'}
 
 
-def test_delete_user_failed(client):
+def test_delete_user_with_invalid_id(client, user):
     response = client.delete('/users/1000')
 
     assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}

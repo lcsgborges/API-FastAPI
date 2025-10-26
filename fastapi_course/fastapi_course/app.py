@@ -1,13 +1,16 @@
 from http import HTTPStatus
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
-from .schemas import Message, UserDB, UserList, UserPublic, UserSchema
+from .database import get_session
+from .models import User
+from .schemas import Message, UserList, UserPublic, UserSchema
 
 app = FastAPI(title='Curso FastAPI')
-
-database = []
 
 
 @app.get(
@@ -26,11 +29,28 @@ async def root():
     response_class=JSONResponse,
     response_model=UserPublic,
 )
-def create_user(user: UserSchema):
-    # model_dump() pega o meu model (objeto) e transforma em um dict
-    user_with_id = UserDB(**user.model_dump(), id=len(database) + 1)
-    database.append(user_with_id)
-    return user_with_id
+def create_user(user: UserSchema, session: Session = Depends(get_session)):
+    db_user = session.scalar(
+        select(User).where(
+            (User.username == user.username) | (User.email == user.email)
+        )
+    )
+
+    if db_user:
+        raise HTTPException(
+            status_code=HTTPStatus.CONFLICT,
+            detail='Username or Email already exists',
+        )
+
+    new_user = User(
+        username=user.username, email=user.email, password=user.password
+    )
+
+    session.add(new_user)
+    session.commit()
+    session.refresh(new_user)  # dar um refresh nos dados do new_user
+
+    return new_user
 
 
 @app.get(
@@ -39,42 +59,12 @@ def create_user(user: UserSchema):
     response_class=JSONResponse,
     response_model=UserList,
 )
-def read_users():
-    return {'users': database}
+def read_users(
+    session: Session = Depends(get_session), limit: int = 10, offset: int = 0
+):
+    users = session.scalars(select(User).limit(limit).offset(offset))
 
-
-@app.put(
-    '/users/{user_id}',
-    status_code=HTTPStatus.OK,
-    response_class=JSONResponse,
-    response_model=UserPublic,
-)
-def update_user(user_id: int, user: UserSchema):
-    if user_id > len(database) or user_id < 1:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
-        )
-
-    user_to_update = UserDB(**user.model_dump(), id=user_id)
-
-    database[user_id - 1] = user_to_update
-
-    return user_to_update
-
-
-@app.delete(
-    '/users/{user_id}',
-    status_code=HTTPStatus.OK,
-    response_class=JSONResponse,
-    response_model=UserPublic,
-)
-def delete_user(user_id: int):
-    if user_id > len(database) or user_id < 1:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
-        )
-
-    return database.pop(user_id - 1)
+    return {'users': users}
 
 
 @app.get(
@@ -83,13 +73,68 @@ def delete_user(user_id: int):
     response_class=JSONResponse,
     response_model=UserPublic,
 )
-def read_user(user_id: int):
-    if user_id > len(database) or user_id < 1:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
-        )
+def read_user(user_id: int, session: Session = Depends(get_session)):
+    db_user = session.scalar(select(User).where(User.id == user_id))
 
-    return database[user_id - 1]
+    if db_user:
+        return db_user
+
+    raise HTTPException(
+        status_code=HTTPStatus.NOT_FOUND, detail='User not found'
+    )
+
+
+@app.put(
+    '/users/{user_id}',
+    status_code=HTTPStatus.OK,
+    response_class=JSONResponse,
+    response_model=UserPublic,
+)
+def update_user(
+    user_id: int, user: UserSchema, session: Session = Depends(get_session)
+):
+    db_user = session.scalar(select(User).where(User.id == user_id))
+
+    if db_user:
+        try:
+            db_user.username = user.username
+            db_user.email = user.email
+            db_user.password = user.password
+            session.commit()
+            session.refresh(db_user)
+            return db_user
+        except IntegrityError:
+            raise HTTPException(
+                status_code=HTTPStatus.CONFLICT,
+                detail='Username or Email already exists',
+            )
+
+    raise HTTPException(
+        status_code=HTTPStatus.NOT_FOUND, detail='User not found'
+    )
+
+
+@app.delete(
+    '/users/{user_id}',
+    status_code=HTTPStatus.OK,
+    response_class=JSONResponse,
+    response_model=Message,
+)
+def delete_user(user_id: int, session: Session = Depends(get_session)):
+    db_user = session.scalar(select(User).where(User.id == user_id))
+
+    if db_user:
+        session.delete(db_user)
+        session.commit()
+
+        return {'message': 'User deleted'}
+
+    raise HTTPException(
+        status_code=HTTPStatus.NOT_FOUND, detail='User not found'
+    )
+
+
+# ========================= EXERCICIO COM HTML =========================
 
 
 @app.get('/exercicio-html', response_class=HTMLResponse)

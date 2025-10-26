@@ -5,9 +5,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
+from sqlalchemy.pool import StaticPool
 
 from fastapi_course.app import app
-from fastapi_course.models import table_registry
+from fastapi_course.database import get_session
+from fastapi_course.models import User, table_registry
 
 # o arquivo conftest.py é um arquivo de configuração de testes do pytest
 
@@ -16,14 +18,25 @@ from fastapi_course.models import table_registry
 
 
 @pytest.fixture
-def client():
-    return TestClient(app)
+def client(session: Session):
+    def get_session_override():
+        return session
+
+    with TestClient(app) as client:
+        app.dependency_overrides[get_session] = get_session_override
+        yield client
+
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
 def session():
     # inicia uma conexão com o banco de dados sqlite em memória
-    engine = create_engine('sqlite:///:memory:')
+    engine = create_engine(
+        'sqlite:///:memory:',
+        connect_args={'check_same_thread': False},
+        poolclass=StaticPool,
+    )
 
     # cria todas as tabelas que estão no table_registry
     table_registry.metadata.create_all(engine)
@@ -55,6 +68,17 @@ def _mock_db_time(*, model, time=datetime.now()):
 @pytest.fixture
 def mock_db_time():
     return _mock_db_time
+
+
+@pytest.fixture
+def user(session: Session):
+    user = User(username='test', email='test@test.com', password='testtest')
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    return user
 
 
 # o @contextmanager torna aquela minha função um with ...
