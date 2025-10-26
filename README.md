@@ -126,3 +126,32 @@ API é uma interface de comunicação entre aplicações. Frequentemente utiliza
 - **D**elete: (DELETE)
 
 > Payload: é o corpo da mensagem que contém os dados reais sendo transferidos entre um cliente e um servidor
+
+
+## Banco de Dados com SQLAlchemy e Gerenciando Migrações com Alembic
+
+### SQLAlchemy
+
+O *SQLAlchemy* possui um ORM (Mapeamento Objeto-Relacional) que permite vincular objetos a registros de banco de dados. Isso permite fazer consultas e interagir com o banco de dados como se estivesse trabalhando com objetos Python
+
+**Por que usar ORM:**
+
+- Abstração de banco de dados
+- Segurança (escapar de consultas e injeções SQL)
+- Eficiência no desenvolvimento
+
+Adicionar sqlalchemy:
+
+```bash
+poetry add sqlalchemy
+```
+
+#### Engine
+
+É o ponto de contato com o banco de dados, estabelecendo e gerenciando conexões. É instanciada através da função *create_engine()*, que recebe as credenciais do banco de dados, o endereço da conexão (URI) e configura uma pull de conexões.
+
+#### Session
+
+É a principal interface quanto à persistência de dados e consultas ao banco de dados utilizando ORM. Atua como intermediário entre o Python e o banco de dados, mediada pela Engine. A Session é encarregada de todas as transações, fornecendo uma API para conduzi-las.
+
+
