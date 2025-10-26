@@ -155,3 +155,25 @@ poetry add sqlalchemy
 É a principal interface quanto à persistência de dados e consultas ao banco de dados utilizando ORM. Atua como intermediário entre o Python e o banco de dados, mediada pela Engine. A Session é encarregada de todas as transações, fornecendo uma API para conduzi-las.
 
 
+#### Migrações
+
+É uma forma de controlar e versionar as mudanças no banco de dados de um projeto
+
+É bom pensar nas migrações como um **git** para o banco de dados.
+
+Cada migração é um arquivo que descreve uma alteração feita na estrutura do banco (schema).
+
+**Código para o alembic:**
+
+```bash
+# cria uma pasta chamada migrations para trabalhar com o alembic
+alembic init migrations
+
+# configurar o arquivo env.py
+
+# iniciar uma migração com revisão
+alembic revision --autogenerate -m "mensagem"
+
+# aplicando a migração
+alembic upgrade head
+```
