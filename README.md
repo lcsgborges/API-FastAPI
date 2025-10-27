@@ -193,4 +193,63 @@ alembic upgrade head
 
 Isso ocorre por meio do objeto *Depends*
 
+## Autenticação e Autorização com Tokens JWT
+
+### Armazenamento de Senhas
+
+Salvar no banco de dados somente o hash das senhas
+
+```bash
+# utilizar o pwdlib2 e argon2
+poetry add "pwdlib2[argon2]"
+```
+
+- pwdlib: biblioteca criada especialmente para manipular hashs de senhas
+- argon2: algoritmo de hash
+
+### Token JWT
+
+O Json Web Token (JWT) é uma forma de assinatura do servidor. Ele diz que o cliente foi autenticado com a assinatura desse servidor. Ele é dividido em 3 partes:
+
+- **Header:** Algoritmo + Tipo de Token
+- **Payload:** Dados que serão usados para assinatura
+- **Assinatura:** Aplicação do algoritmo + Chave secreta da aplicação
+
+#### Payloads e as claims
+
+- **sub:** identifica o assunto (subject), basicamente uma forma de identificar o cliente (email, uuid, ...)
+- **exp:** tempo de expiração do token. O backend vai usar esse dado para validar se o token ainda é válido.
+
+```json
+{
+    "sub": "test@test.com",
+    "exp": 1690258153
+}
+```
+
+> Site para visualizar: [JSON Web Token Claims](https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-token-claims)
+
+Geração de tokens JWT com Python:
+
+```python
+poetry add pyjwt
+```
+
+> Gerar um token aleatório com python
+
+```python
+import secrets
+
+secrets.token_hex()
+```
+
+### Autorização
+
+A ideia é garantir que somente pessoas autorizadas possam executar determinadas operações.
+
+Agora que temos os tokens, podemos garantir que somente clientes com contas já criadas e logadas possam ter acesso aos endpoints:
+
+- Listar: somente se estiver logado
+- Deletar: somente se a conta for sua
+- Alterar: somente se a conta for sua
 
