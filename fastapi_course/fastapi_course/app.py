@@ -10,7 +10,12 @@ from sqlalchemy.orm import Session
 from .database import get_session
 from .models import User
 from .schemas import Message, TokenJWT, UserList, UserPublic, UserSchema
-from .security import create_access_token, get_password_hash, verify_password
+from .security import (
+    create_access_token,
+    get_current_user,
+    get_password_hash,
+    verify_password,
+)
 
 app = FastAPI(title='Curso FastAPI')
 
@@ -64,7 +69,10 @@ def create_user(user: UserSchema, session: Session = Depends(get_session)):
     response_model=UserList,
 )
 def read_users(
-    session: Session = Depends(get_session), limit: int = 10, offset: int = 0
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+    limit: int = 10,
+    offset: int = 0,
 ):
     users = session.scalars(select(User).limit(limit).offset(offset))
 
@@ -95,27 +103,31 @@ def read_user(user_id: int, session: Session = Depends(get_session)):
     response_model=UserPublic,
 )
 def update_user(
-    user_id: int, user: UserSchema, session: Session = Depends(get_session)
+    user_id: int,
+    user: UserSchema,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
-    db_user = session.scalar(select(User).where(User.id == user_id))
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
+        )
 
-    if db_user:
-        try:
-            db_user.username = user.username
-            db_user.email = user.email
-            db_user.password = get_password_hash(user.password)
-            session.commit()
-            session.refresh(db_user)
-            return db_user
-        except IntegrityError:
-            raise HTTPException(
-                status_code=HTTPStatus.CONFLICT,
-                detail='Username or Email already exists',
-            )
+    try:
+        current_user.username = user.username
+        current_user.email = user.email
+        current_user.password = get_password_hash(user.password)
 
-    raise HTTPException(
-        status_code=HTTPStatus.NOT_FOUND, detail='User not found'
-    )
+        session.commit()
+        session.refresh(current_user)
+
+        return current_user
+
+    except IntegrityError:
+        raise HTTPException(
+            status_code=HTTPStatus.CONFLICT,
+            detail='Username or Email already exists',
+        )
 
 
 @app.delete(
@@ -124,18 +136,20 @@ def update_user(
     response_class=JSONResponse,
     response_model=Message,
 )
-def delete_user(user_id: int, session: Session = Depends(get_session)):
-    db_user = session.scalar(select(User).where(User.id == user_id))
+def delete_user(
+    user_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
+        )
 
-    if db_user:
-        session.delete(db_user)
-        session.commit()
+    session.delete(current_user)
+    session.commit()
 
-        return {'message': 'User deleted'}
-
-    raise HTTPException(
-        status_code=HTTPStatus.NOT_FOUND, detail='User not found'
-    )
+    return {'message': 'User deleted'}
 
 
 @app.post('/login', response_model=TokenJWT)

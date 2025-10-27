@@ -49,6 +49,7 @@ def session():
 
     # exclui as tabelas criadas para teste
     table_registry.metadata.drop_all(engine)
+    engine.dispose()
 
 
 @contextmanager
@@ -95,3 +96,13 @@ def user(session: Session):
 # o yield vai retornar um time = tempo para a aplicação
 # depois volta a executar o que tem abaixo dele depois que quem pediu
 # a funcao ja usou o valor do time que o yield entregou
+
+
+@pytest.fixture
+def token(client, user):
+    response = client.post(
+        '/login/',
+        data={'username': user.username, 'password': user.clean_password},
+    )
+
+    return response.json()['access_token']

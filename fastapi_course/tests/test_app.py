@@ -9,7 +9,7 @@ def test_root_must_return_hello_world(client):
     assert response.status_code == HTTPStatus.OK
 
 
-def test_exercicio_html_return_ola_mundo(client):
+def test_exercicio_html(client):
     response = client.get('/exercicio-html')
     assert 'olá mundo' in response.text
     assert response.status_code == HTTPStatus.OK
@@ -48,17 +48,12 @@ def test_create_user_already_exists(client, user):
     assert response.json() == {'detail': 'Username or Email already exists'}
 
 
-def test_read_users_without_users(client):
-    response = client.get('/users/')
-
-    assert response.status_code == HTTPStatus.OK
-    assert response.json() == {'users': []}
-
-
-def test_read_users_with_users(client, user):
+def test_read_users(client, user, token):
     user_schema = UserPublic.model_validate(user).model_dump()
 
-    response = client.get('/users/')
+    response = client.get(
+        '/users/', headers={'Authorization': f'Bearer {token}'}
+    )
 
     assert response.status_code == HTTPStatus.OK
 
@@ -82,7 +77,7 @@ def test_read_user_with_invalid_id(client, user):
     assert response.json() == {'detail': 'User not found'}
 
 
-def test_update_user_with_valid_id(client, user):
+def test_update_user(client, user, token):
     response = client.put(
         '/users/1',
         json={
@@ -90,6 +85,7 @@ def test_update_user_with_valid_id(client, user):
             'email': 'sofia@example.com',
             'password': 'sofia123',
         },
+        headers={'Authorization': f'Bearer {token}'},
     )
 
     user_schema = UserPublic.model_validate(user).model_dump()
@@ -99,7 +95,7 @@ def test_update_user_with_valid_id(client, user):
     assert response.json() == user_schema
 
 
-def test_update_user_with_invalid_id(client, user):
+def test_update_another_user(client, user, token):
     response = client.put(
         '/users/1000',
         json={
@@ -107,13 +103,14 @@ def test_update_user_with_invalid_id(client, user):
             'email': 'teste@example.com',
             'password': 'teste',
         },
+        headers={'Authorization': f'Bearer {token}'},
     )
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permissions'}
 
 
-def test_update_integrity_error(client, user):
+def test_update_integrity_error(client, user, token):
     client.post(
         '/users/',
         json={
@@ -130,25 +127,29 @@ def test_update_integrity_error(client, user):
             'email': user.email,
             'password': user.password,
         },
+        headers={'Authorization': f'Bearer {token}'},
     )
 
     response.status_code == HTTPStatus.CONFLICT
     response.json() == {'detail': 'Username or Email already exists'}
 
 
-def test_delete_user_with_valid_id(client, user):
-    response = client.delete('/users/1')
+def test_delete_user_with_valid_id(client, user, token):
+    response = client.delete(
+        f'/users/{user.id}', headers={'Authorization': f'Bearer {token}'}
+    )
 
     assert response.status_code == HTTPStatus.OK
-
     assert response.json() == {'message': 'User deleted'}
 
 
-def test_delete_user_with_invalid_id(client, user):
-    response = client.delete('/users/1000')
+def test_delete_another_user(client, user, token):
+    response = client.delete(
+        '/users/1000', headers={'Authorization': f'Bearer {token}'}
+    )
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permissions'}
 
 
 def test_login_access_token(client, user):
@@ -162,3 +163,12 @@ def test_login_access_token(client, user):
     assert response.status_code == HTTPStatus.OK
     assert token['token_type'] == 'Bearer'
     assert 'access_token' in token
+
+
+def test_jwt_invalid_token(client):
+    response = client.delete(
+        '/users/1', headers={'Authorization': 'Bearer token-invalido'}
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Could not validate credentials'}
