@@ -253,3 +253,40 @@ Agora que temos os tokens, podemos garantir que somente clientes com contas já 
 - Deletar: somente se a conta for sua
 - Alterar: somente se a conta for sua
 
+## Refatorando a Estrutura do Projeto com Routers e Annotated
+
+### Routers
+
+- Permite organizar e agrupar diferentes rotas na aplicação
+- Organizar por domínios
+- Um "subaplicativo" FastAPI que pode ser montado em uma aplicação principal
+
+
+### FAST na Análise Estática do Ruff
+
+Podemos adicionar os padrões de boas práticas de código do FastAPI ao Ruff:
+
+```toml
+# pyproject.toml
+[tool.ruff.lint]
+preview = true
+select = ['I', 'F', 'E', 'W', 'PL', 'PT', 'FAST']
+```
+
+### Annotated
+
+É um recurso que o FastAPI suporta vindo da biblioteca nativa `typing`.
+Ao definir uma anotação de tipo, seguimos o seguinte formato:
+
+```python
+session: Session = Depends(get_session)
+```
+
+Como o FastAPI recomenda usar:
+
+```python
+from typing import Annotated 
+
+T_Session = Annotated[Session, Depends(get_session)]
+CurrentUser = Annotated[User, Depends(get_current_user)]
+```
