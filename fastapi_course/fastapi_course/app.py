@@ -2,13 +2,15 @@ from http import HTTPStatus
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .database import get_session
 from .models import User
-from .schemas import Message, UserList, UserPublic, UserSchema
+from .schemas import Message, TokenJWT, UserList, UserPublic, UserSchema
+from .security import create_access_token, get_password_hash, verify_password
 
 app = FastAPI(title='Curso FastAPI')
 
@@ -43,7 +45,9 @@ def create_user(user: UserSchema, session: Session = Depends(get_session)):
         )
 
     new_user = User(
-        username=user.username, email=user.email, password=user.password
+        username=user.username,
+        email=user.email,
+        password=get_password_hash(user.password),
     )
 
     session.add(new_user)
@@ -99,7 +103,7 @@ def update_user(
         try:
             db_user.username = user.username
             db_user.email = user.email
-            db_user.password = user.password
+            db_user.password = get_password_hash(user.password)
             session.commit()
             session.refresh(db_user)
             return db_user
@@ -132,6 +136,32 @@ def delete_user(user_id: int, session: Session = Depends(get_session)):
     raise HTTPException(
         status_code=HTTPStatus.NOT_FOUND, detail='User not found'
     )
+
+
+@app.post('/login', response_model=TokenJWT)
+def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: Session = Depends(get_session),
+):
+    db_user = session.scalar(
+        select(User).where(User.username == form_data.username)
+    )
+
+    if not db_user:
+        raise HTTPException(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            detail='Incorrect username or password',
+        )
+
+    if not verify_password(form_data.password, db_user.password):
+        raise HTTPException(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            detail='Incorrect username or password',
+        )
+
+    token = create_access_token({'sub': form_data.username})
+
+    return {'access_token': token, 'token_type': 'Bearer'}
 
 
 # ========================= EXERCICIO COM HTML =========================

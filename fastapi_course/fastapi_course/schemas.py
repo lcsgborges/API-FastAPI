@@ -24,3 +24,8 @@ class UserPublic(BaseModel):
 
 class UserList(BaseModel):
     users: list[UserPublic]
+
+
+class TokenJWT(BaseModel):
+    access_token: str
+    token_type: str

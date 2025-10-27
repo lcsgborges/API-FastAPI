@@ -10,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 from fastapi_course.app import app
 from fastapi_course.database import get_session
 from fastapi_course.models import User, table_registry
+from fastapi_course.security import get_password_hash
 
 # o arquivo conftest.py é um arquivo de configuração de testes do pytest
 
@@ -72,11 +73,19 @@ def mock_db_time():
 
 @pytest.fixture
 def user(session: Session):
-    user = User(username='test', email='test@test.com', password='testtest')
+    password = 'testtest'
+
+    user = User(
+        username='test',
+        email='test@test.com',
+        password=get_password_hash(password),
+    )
 
     session.add(user)
     session.commit()
     session.refresh(user)
+
+    user.clean_password = password
 
     return user
 
