@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 from fastapi_course.schemas import UserPublic
+from fastapi_course.security import create_access_token
 
 
 def test_root_must_return_hello_world(client):
@@ -60,18 +61,22 @@ def test_read_users(client, user, token):
     assert response.json() == {'users': [user_schema]}
 
 
-def test_read_user_with_valid_id(client, user):
+def test_read_user_with_valid_id(client, user, token):
     user_schema = UserPublic.model_validate(user).model_dump()
 
-    response = client.get('/users/1')
+    response = client.get(
+        f'/users/{user.id}', headers={'Authorization': f'Bearer {token}'}
+    )
 
     assert response.status_code == HTTPStatus.OK
 
     assert response.json() == user_schema
 
 
-def test_read_user_with_invalid_id(client, user):
-    response = client.get('/users/1000')
+def test_read_user_with_invalid_id(client, user, token):
+    response = client.get(
+        '/users/1000', headers={'Authorization': f'Bearer {token}'}
+    )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}
@@ -134,7 +139,7 @@ def test_update_integrity_error(client, user, token):
     response.json() == {'detail': 'Username or Email already exists'}
 
 
-def test_delete_user_with_valid_id(client, user, token):
+def test_delete_user(client, user, token):
     response = client.delete(
         f'/users/{user.id}', headers={'Authorization': f'Bearer {token}'}
     )
@@ -165,9 +170,53 @@ def test_login_access_token(client, user):
     assert 'access_token' in token
 
 
+def test_login_invalid_user(client):
+    response = client.post(
+        '/login',
+        data={'username': 'invalid-username', 'password': 'invalid-password'},
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Incorrect username or password'}
+
+
+def test_login_invalid_password(client, user):
+    response = client.post(
+        '/login',
+        data={'username': user.username, 'password': 'invalid-password'},
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Incorrect username or password'}
+
+
 def test_jwt_invalid_token(client):
     response = client.delete(
         '/users/1', headers={'Authorization': 'Bearer token-invalido'}
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Could not validate credentials'}
+
+
+def test_get_current_user_with_invalid_sub(client):
+    data = {'test': 'test'}
+    token = create_access_token(data)
+
+    response = client.get(
+        '/users/', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Could not validate credentials'}
+
+
+def test_get_current_user_with_invalid_user_in_db(client, user):
+    data = {'sub': 'invalid-user'}
+    token = create_access_token(data)
+
+    response = client.get(
+        '/users/', headers={'Authorization': f'Bearer {token}'}
     )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED

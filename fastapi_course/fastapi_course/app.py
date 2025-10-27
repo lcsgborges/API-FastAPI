@@ -85,7 +85,11 @@ def read_users(
     response_class=JSONResponse,
     response_model=UserPublic,
 )
-def read_user(user_id: int, session: Session = Depends(get_session)):
+def read_user(
+    user_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     db_user = session.scalar(select(User).where(User.id == user_id))
 
     if db_user:

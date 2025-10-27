@@ -59,13 +59,18 @@ def get_current_user(
     try:
         payload = decode(token, SECRET_KEY, ALGORITHM)
         subject_username = payload.get('sub')
+
         if not subject_username:
             raise credentials_exception
+
         db_user = session.scalar(
             select(User).where(User.username == subject_username)
         )
+
         if not db_user:
             raise credentials_exception
+
         return db_user
+
     except DecodeError:
         raise credentials_exception
