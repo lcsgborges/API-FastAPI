@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_course.database import get_session
 from fastapi_course.models import User
@@ -22,7 +22,7 @@ router = APIRouter(prefix='/users', tags=['users'])
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
 T_FilterPage = Annotated[FilterPage, Query()]
-T_Session = Annotated[Session, Depends(get_session)]
+Session = Annotated[AsyncSession, Depends(get_session)]
 
 
 @router.post(
@@ -31,8 +31,8 @@ T_Session = Annotated[Session, Depends(get_session)]
     response_class=JSONResponse,
     response_model=UserPublic,
 )
-def create_user(user: UserSchema, session: T_Session):
-    db_user = session.scalar(
+async def create_user(user: UserSchema, session: Session):
+    db_user = await session.scalar(
         select(User).where(
             (User.username == user.username) | (User.email == user.email)
         )
@@ -51,8 +51,8 @@ def create_user(user: UserSchema, session: T_Session):
     )
 
     session.add(new_user)
-    session.commit()
-    session.refresh(new_user)  # dar um refresh nos dados do new_user
+    await session.commit()
+    await session.refresh(new_user)  # dar um refresh nos dados do new_user
 
     return new_user
 
@@ -63,10 +63,10 @@ def create_user(user: UserSchema, session: T_Session):
     response_class=JSONResponse,
     response_model=UserList,
 )
-def read_users(
-    session: T_Session, current_user: CurrentUser, filters: T_FilterPage
+async def read_users(
+    session: Session, current_user: CurrentUser, filters: T_FilterPage
 ):
-    users = session.scalars(
+    users = await session.scalars(
         select(User).limit(filters.limit).offset(filters.offset)
     )
 
@@ -79,12 +79,12 @@ def read_users(
     response_class=JSONResponse,
     response_model=UserPublic,
 )
-def read_user(
+async def read_user(
     user_id: int,
-    session: T_Session,
+    session: Session,
     current_user: CurrentUser,
 ):
-    db_user = session.scalar(select(User).where(User.id == user_id))
+    db_user = await session.scalar(select(User).where(User.id == user_id))
 
     if db_user:
         return db_user
@@ -100,10 +100,10 @@ def read_user(
     response_class=JSONResponse,
     response_model=UserPublic,
 )
-def update_user(
+async def update_user(
     user_id: int,
     user: UserSchema,
-    session: T_Session,
+    session: Session,
     current_user: CurrentUser,
 ):
     if current_user.id != user_id:
@@ -116,8 +116,8 @@ def update_user(
         current_user.email = user.email
         current_user.password = get_password_hash(user.password)
 
-        session.commit()
-        session.refresh(current_user)
+        await session.commit()
+        await session.refresh(current_user)
 
         return current_user
 
@@ -134,9 +134,9 @@ def update_user(
     response_class=JSONResponse,
     response_model=Message,
 )
-def delete_user(
+async def delete_user(
     user_id: int,
-    session: T_Session,
+    session: Session,
     current_user: CurrentUser,
 ):
     if current_user.id != user_id:
@@ -144,7 +144,7 @@ def delete_user(
             status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
         )
 
-    session.delete(current_user)
-    session.commit()
+    await session.delete(current_user)
+    await session.commit()
 
     return {'message': 'User deleted'}
