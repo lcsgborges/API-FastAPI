@@ -9,9 +9,12 @@ from pwdlib import PasswordHash
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .database import get_session
-from .models import User
-from .settings import Settings
+from fastapi_course.database import get_session
+from fastapi_course.models import User
+from fastapi_course.settings import Settings
+
+settings = Settings()
+
 
 pwd_context = PasswordHash.recommended()
 
@@ -24,26 +27,21 @@ def verify_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
 
 
-SECRET_KEY = Settings().SECRET_KEY
-ALGORITHM = 'HS256'
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-
 def create_access_token(claim: dict):
     # claim = {'sub': username, ...}
     to_encode = claim.copy()
 
     expire_time = datetime.now(tz=ZoneInfo('UTC')) + timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
     to_encode.update({'exp': expire_time})
 
-    encoded_jwt = encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = encode(to_encode, settings.SECRET_KEY, settings.ALGORITHM)
 
     return encoded_jwt
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/login/')
 
 
 def get_current_user(
@@ -57,7 +55,7 @@ def get_current_user(
     )
 
     try:
-        payload = decode(token, SECRET_KEY, ALGORITHM)
+        payload = decode(token, settings.SECRET_KEY, settings.ALGORITHM)
         subject_username = payload.get('sub')
 
         if not subject_username:

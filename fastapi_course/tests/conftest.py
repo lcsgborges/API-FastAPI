@@ -11,6 +11,7 @@ from fastapi_course.app import app
 from fastapi_course.database import get_session
 from fastapi_course.models import User, table_registry
 from fastapi_course.security import get_password_hash
+from fastapi_course.settings import Settings
 
 # o arquivo conftest.py é um arquivo de configuração de testes do pytest
 
@@ -101,8 +102,15 @@ def user(session: Session):
 @pytest.fixture
 def token(client, user):
     response = client.post(
-        '/login/',
+        'auth/login/',
         data={'username': user.username, 'password': user.clean_password},
     )
 
     return response.json()['access_token']
+
+
+@pytest.fixture
+def settings():
+    s = Settings()
+    # AQUI PODERIA MANIPULAR 's'
+    return s
