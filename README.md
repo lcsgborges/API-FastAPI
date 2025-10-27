@@ -290,3 +290,76 @@ from typing import Annotated
 T_Session = Annotated[Session, Depends(get_session)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 ```
+
+## Tornando o Projeto Assíncrono (asyncIO)
+
+A aplicação fica `idle` quando fazemos acessos ao banco de dados e coisas do tipo. Chamamos isso de chamada bloqueante
+
+O servidor (**uvicorn**) não bloqueia. Por padrão 2048 requisições podem aguardar no backlog
+
+O servidor pode "copiar" a aplicação. Com isso, conseguimos distribuir as requisições de forma paralela
+
+```bash
+uvicorn api.app:app --workers 3
+```
+
+Com o código acima, criamos 3 cópias do servidor para permitir 3 acessos ao mesmo tempo na aplicação
+
+**Essas cópias são processos.**
+
+### Aplicação não Bloqueante
+
+#### Corrotinas
+
+Uma corrotina assíncrona basicamente é uma função em python que pode ser **escalonada** durante o bloqueio de I/O.
+
+São criadas pela palavra `async` e o escalonamento é feito pela palavra `await`.
+
+Uma das características de uma corrotina (coroutine) é o fato dela não ser executada quando chamada diretamente.
+
+Ela precisa ser executada por um agente externo. Um **loop de eventos (`event loop`)**.
+
+Dentro da biblioteca `asyncio` temos o método `get_event_loop()` e o `run_until_complete()`
+
+#### Cooperatividade e Escalonamento
+
+- Cooperatividade: habilidade de "passar a vez" para que outra corrotina seja executada.
+- Escalonamento: é o que o loop faz ao trocar entre corrotinas durante a cooperação.
+
+O `event loop` usando pelo **uvicorn** é o `uvloop`
+
+### Banco de Dados e Bloqueios
+
+#### Instalando o suporte a asyncio no sqlalchemy
+
+```bash
+poetry add "sqlalchemy[asyncio]"
+```
+
+#### Instalando o suporte a asyncio no sqlite
+
+```bash
+poetry add aiosqlite
+```
+
+Precisamos alterar nosso .env:
+
+```.env
+DATABASE_URL=sqlite+aiosqlite:...
+```
+
+#### Pytest com asyncio
+
+```bash
+poetry add --group dev pytest-asyncio
+```
+
+
+#### Coverage não suporta asyncio
+
+Precisamos passar para o coverage.run:
+
+```toml
+[tool.coverage.run]
+concurrency = ["thread", "greenlet"]
+```
