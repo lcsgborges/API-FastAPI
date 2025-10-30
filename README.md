@@ -363,3 +363,25 @@ Precisamos passar para o coverage.run:
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]
 ```
+
+## Tornando o Sistema de Autenticação Robusto
+
+### Criando Modelos Users sob Demanda
+
+Podemos criar `users` de forma mais intuitiva e sem a preocupação de valores repetidos, podemos usar uma "fábrica" de `users`
+
+Vamos utilizar a biblioteca `factory-boy`
+
+```bash
+poetry add --group dev factory-boy
+```
+
+> Fábrica é um padrão de projeto de construção de objetos (GoF)
+
+### Tempo de expiração do Token
+
+Para validar e poder testar se o tempo de expiração do Token está funcionando, podemos adicionar a biblioteca `freezegun` que ajuda a pausa o tempo durantes os testes
+
+```bash
+poetry add --group dev freezegun
+```
