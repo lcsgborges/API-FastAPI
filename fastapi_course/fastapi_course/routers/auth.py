@@ -10,10 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi_course.database import get_session
 from fastapi_course.models import User
 from fastapi_course.schemas import TokenJWT
-from fastapi_course.security import create_access_token, verify_password
+from fastapi_course.security import (
+    create_access_token,
+    get_current_user,
+    verify_password,
+)
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 
+CurrentUser = Annotated[User, Depends(get_current_user)]
 OAuth2Form = Annotated[OAuth2PasswordRequestForm, Depends()]
 Session = Annotated[AsyncSession, Depends(get_session)]
 
@@ -44,3 +49,15 @@ async def login_for_access_token(session: Session, form_data: OAuth2Form):
     token = create_access_token({'sub': form_data.username})
 
     return {'access_token': token, 'token_type': 'Bearer'}
+
+
+@router.post(
+    '/refresh_token',
+    status_code=HTTPStatus.OK,
+    response_class=JSONResponse,
+    response_model=TokenJWT,
+)
+async def refresh_access_token(user: CurrentUser):
+    new_access_token = create_access_token(claim={'sub': user.username})
+
+    return {'access_token': new_access_token, 'token_type': 'Bearer'}
