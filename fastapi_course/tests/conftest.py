@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from datetime import datetime
 
 import factory
+import factory.fuzzy
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
@@ -11,7 +12,7 @@ from sqlalchemy.pool import StaticPool
 
 from fastapi_course.app import app
 from fastapi_course.database import get_session
-from fastapi_course.models import User, table_registry
+from fastapi_course.models import Todo, TodoState, User, table_registry
 from fastapi_course.security import get_password_hash
 from fastapi_course.settings import Settings
 
@@ -19,6 +20,25 @@ from fastapi_course.settings import Settings
 
 # esse decorator permite reutilizar esse bloco de código de teste em
 # outros arquivos, é uma forma de de centralizar recursos comuns de teste
+
+
+class UserFactory(factory.Factory):
+    class Meta:
+        model = User
+
+    username = factory.Sequence(lambda n: f'test{n}')
+    email = factory.LazyAttribute(lambda obj: f'{obj.username}@test.com')
+    password = factory.LazyAttribute(lambda obj: f'{obj.username}#123')
+
+
+class TodoFactory(factory.Factory):
+    class Meta:
+        model = Todo
+
+    title = factory.Faker('text')
+    description = factory.Faker('text')
+    state = factory.fuzzy.FuzzyChoice(TodoState)
+    user_id = 1
 
 
 @pytest.fixture
@@ -128,10 +148,12 @@ def settings():
     return s
 
 
-class UserFactory(factory.Factory):
-    class Meta:
-        model = User
+@pytest_asyncio.fixture
+async def todo(session: AsyncSession, user):
+    todo = TodoFactory(user_id=user.id)
 
-    username = factory.Sequence(lambda n: f'test{n}')
-    email = factory.LazyAttribute(lambda obj: f'{obj.username}@test.com')
-    password = factory.LazyAttribute(lambda obj: f'{obj.username}#123')
+    session.add(todo)
+    await session.commit()
+    await session.refresh(todo)
+
+    return todo

@@ -3,12 +3,13 @@ from http import HTTPStatus
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from fastapi_course.routers import auth, users
+from fastapi_course.routers import auth, todos, users
 from fastapi_course.schemas import Message
 
 app = FastAPI(title='Curso FastAPI')
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(todos.router)
 
 
 @app.get(

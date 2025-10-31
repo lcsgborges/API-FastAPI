@@ -1,4 +1,8 @@
+from typing import Optional
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+from fastapi_course.models import TodoState
 
 
 class Message(BaseModel):
@@ -34,3 +38,29 @@ class TokenJWT(BaseModel):
 class FilterPage(BaseModel):
     offset: int = Field(ge=0, default=0)
     limit: int = Field(ge=0, default=10)
+
+
+class TodoSchema(BaseModel):
+    title: str
+    description: str
+    state: TodoState = Field(default=TodoState.todo)
+
+
+class TodoPublic(TodoSchema):
+    id: int
+
+
+class TodoList(BaseModel):
+    todos: list[TodoPublic]
+
+
+class TodoUpdate(BaseModel):
+    title: Optional[str] = None  # Optional[str] == str | None
+    description: Optional[str] = None
+    state: Optional[str] = None
+
+
+class TodoFilter(FilterPage):
+    title: Optional[str] = Field(default=None, min_length=3, max_length=30)
+    description: Optional[str] = Field(default=None, min_length=3)
+    state: Optional[str] = None
