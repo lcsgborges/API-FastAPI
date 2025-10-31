@@ -385,3 +385,22 @@ Para validar e poder testar se o tempo de expiração do Token está funcionando
 ```bash
 poetry add --group dev freezegun
 ```
+
+## Rotas CRUD para Gerenciamento de Tarefas
+
+- Criar um novo router
+- Criar uma nova tabela no banco
+- Criar novos schemas para tarefas
+- Criar novos endpoints para tarefas
+
+
+Introduzindo FuzzyChoice:
+
+```python
+import factory.fuzzy
+
+state = factory.fuzzy.FuzzyChoice(TodoState) # por exemplo
+```
+
+É uma forma de escolher randomicamente algo
+
