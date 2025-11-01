@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Copy files
         uses: actions/checkout@v4
 
       - name: Install Python
@@ -23,3 +23,10 @@ jobs:
 
       - name: Execute tests
         run: poetry run task test
+    
+    env:
+      DATABASE_URL: ${{secrets.DATABASE_URL}}
+      SECRET_KEY: ${{secrets.SECRET_KEY}}
+      ALGORITHM: ${{secrets.ALGORITHM}}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}
+      

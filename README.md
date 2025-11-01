@@ -637,3 +637,20 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+...
+```
+
+### Variáveis de Ambiente no CI
+
+Usando o GH:
+
+```bash
+gh secret set -f .env
+```
+
+Ou pelo GitHub:
+
+- Ir em Settings
+- Ir em Secrets and variables
+- Ir em Actios
+- Clicar em New repository secret e criar as variáveis de ambiente
