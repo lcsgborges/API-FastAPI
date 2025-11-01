@@ -1,21 +1,25 @@
 name: pipeline
+
 on: [push, pull_request]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
-  steps:
-    - name: Install python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install poetry
-      run: pipx install poetry
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
 
-    - name: Install dependencies
-      run: poetry install
+      - name: Install Poetry
+        run: pipx install poetry
 
-    - name: Execute tests
-      run: poetry run task test
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Execute tests
+        run: poetry run task test
