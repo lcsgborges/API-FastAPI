@@ -404,3 +404,201 @@ state = factory.fuzzy.FuzzyChoice(TodoState) # por exemplo
 
 É uma forma de escolher randomicamente algo
 
+## Dockerizando a Aplicação e Introdução ao PostgreSQL
+
+### Docker
+
+- Ferramenta para criar containers
+
+- Containers são formas de **isolar as dependências**. Da mesma forma que fazemos com o ambiente virtual, que isolam dependências python.
+
+- No caso de containers Docker, estamos falando de isolamento de ferramentas do sistema operacional. Isolamos programas e ambientes de forma completa.
+
+### PostgreSQL
+
+- Escalabilidade: projetado para lidar com uma grande quantidade de dados e requisições
+
+- Concorrência: permite múltiplas operações simultâneas.
+
+- Funcionalidades avançadas: possui várias extensões e funcionalidades.
+
+Subindo uma aplicação postgreSQL no Docker:
+
+```bash
+docker run --name app_database -e POSTGRES_USER=app_user -e POSTGRES_DB=app_db -e POSTGRES_PASSWORD=app_password -p 5432:5432 postgres
+```
+
+Podemos passar com a flag `-d` também.
+
+Para listar os containers:
+
+```bash
+docker ps
+```
+
+A porta `5432:5430` significa que **MEU PC NA PORTA 5432** se comunica com a porta **5430 DO CONTAINER**
+
+Listar imagens instaladas na minha máquina:
+
+```bash
+docker image ls
+```
+
+Listar containers na minha máquina:
+
+```bash
+docker container ls
+
+# com mais detalhes:
+docker container ls -a
+
+# podemos usar outro comando:
+docker ps
+
+docker ps -a
+```
+
+Para iniciar um container parado:
+
+```bash
+docker start <nome_container>
+```
+
+Para remover um container:
+
+```bash
+docker rm <nome_container>
+
+# ou
+
+docker rm -f <nome_container>
+```
+
+Para remover uma imagem:
+
+```bash
+docker rmi <id_imagem>
+```
+
+Para limpar tudo de uma vez, podemos usar:
+
+```bash
+docker system prune -a
+```
+
+### Conectando nossa aplicação ao postgres
+
+```bash
+poetry add "psycopg[binary]"
+```
+
+Além disso, precisamos alterar a URL do banco de dados:
+
+```.env
+DATABASE_URL="postgresql+psycopg://app_user:app_password@127.0.0.1:5432/app_db"
+```
+
+Agora precisamos subir as migrações pro nosso container:
+
+```bash
+alembic upgrade head
+```
+
+No Windows, não funciona muito bem o async do psycopg, para isso podemos adicionar isso no início do nosso app.py:
+
+```python
+import asyncio
+import sys
+
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(
+        asyncio.WindowsSelectorEventLoopPolicy()
+    )
+
+app = FastAPI()
+```
+
+### Banco de Dados nos Testes
+
+Agora, vamos utilizar nosso banco de dados nos testes (retirando o sqlite:///:memory:)
+
+Entretanto, se pararmos o banco de dados, não conseguimos rodar os testes
+
+### Testando com Docker
+
+Existe uma biblioteca que gerencia as dependências de containers externos para que a aplicação seja executada. O `TestContainers`
+
+```bash
+poetry add --group dev testcontainers
+```
+
+Ela cria um container pro teste, baixa a imagem e faz os testes, mas isso demora muito, dependendo do escopo da fixture.
+
+### Escopo da Fixture
+
+- function: executada em todas as funções de teste
+- class: executada uma vez por classe de teste
+- module: executada uma vez por módulo
+- package: executada uma vez por pacote
+- session: executada uma vez por execução de testes
+
+A fixture do pytest tem diferentes escopos, por padrão, ela é do escopo de `function`, ou seja, executa uma função de teste, carrega outra fixture, faz o teste da função, carrega a fixture, ... 
+
+Para resolver o problema com a lentidão de testes, iremos criar uma fixture para iniciar o container de banco de dados com o escopo `session`
+
+### Criando a Imagem do Projeto
+
+- Criar o arquivo `Dockerfile` na raiz do projeto
+
+Para criar a imagem:
+
+```bash
+docker build -t "nome_imagem" .
+```
+
+Para iniciar a imagem:
+
+```bash
+docker run -it --name <nome_imagem> -p 8000:8000 <nome_imagem>:latest
+```
+
+### Docker Compose
+
+A ideia do `docker compose` é criar um único arquivo `yaml` que reúna todos os containers necessários para executar a aplicação
+
+Dessa forma, podemos gerenciar todos os containers com um único comando: `docker compose up`
+
+Fazendo o build:
+
+```bash
+docker compose build
+```
+
+### Refazendo o container
+
+```bash
+docker compose up --build
+```
+
+### Para parar o container
+
+```bash
+docker compose down
+
+# se quisermos remover o volume junto, usamos:
+docker compose down -v
+```
+
+### Parar rodar o container em background
+
+```bash
+docker compose up -d
+```
+
+### Remover arquivos não utilizados
+
+Como não estamos mais usando sqlite, podemos remover o aiosqlite:
+
+```bash
+poetry remove aiosqlite
+```
