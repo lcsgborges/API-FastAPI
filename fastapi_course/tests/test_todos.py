@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy.exc import DataError
 
 from fastapi_course.models import Todo, TodoState, User
 from tests.conftest import TodoFactory
@@ -221,10 +221,9 @@ async def test_create_todo_error(session, user: User):
     )
 
     session.add(todo)
-    await session.commit()
 
-    with pytest.raises(LookupError):
-        await session.scalar(select(Todo))
+    with pytest.raises(DataError):
+        await session.commit()
 
 
 def test_list_todos_title_min_lenght_error(client, token):

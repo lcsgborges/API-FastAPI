@@ -1,3 +1,5 @@
+import asyncio
+import sys
 from http import HTTPStatus
 
 from fastapi import FastAPI
@@ -5,6 +7,10 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from fastapi_course.routers import auth, todos, users
 from fastapi_course.schemas import Message
+
+# para sistemas windows
+if sys.platform == 'win32':  # pragma: no cover
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 app = FastAPI(title='Curso FastAPI')
 app.include_router(auth.router)
