@@ -654,3 +654,53 @@ Ou pelo GitHub:
 - Ir em Secrets and variables
 - Ir em Actios
 - Clicar em New repository secret e criar as variáveis de ambiente
+
+## Deploy da Aplicação no Fly.io
+
+### PaaS (Platform as a Service)
+
+Oferece uma plataforma como serviço. O serviço contratado vai cuidar de:
+
+- Segurança
+- Rede
+- Disponibilidade
+- Atualizações/Manutenções
+- ...
+
+Instalar o flyctl:
+
+```bash
+curl -L https://fly.io/install.sh | sh
+flyctl version
+```
+
+Autenticação:
+
+```bash
+flyctl auth login
+```
+
+Configurações para o deploy (precisa ser no caminho que tem o Dockerfile)
+
+```bash
+# para achar o caminho
+flyctl launch --no-deploy
+
+# Do you want to tweak these settings before proceeding? (y/n)
+
+# responder com Y a pergunta feita, pois vamos terminar a configuração no site
+```
+
+---
+
+> Eu fiz o deploy do backend no [Render](https://render.com/) e o banco de dados fiz no [Neon](https://neon.com/)
+
+Para garantir que o banco de dados irá subir no *Neon*, precisamos fazer a migração do nosso projeto
+
+Vamos alterar nosso arquivo **.env** com a URL dada pelo *Neon*, depois é só rodar o seguinte comando:
+
+```bash
+poetry run alembic upgrade head
+```
+
+Com isso, nosso banco de dados irá subir no Neon, depois é só linkar a URL dele no Render, para nosso backend se comunicar com o Banco de dados
