@@ -9,7 +9,7 @@ def test_create_user(client):
         json={
             'username': 'alice',
             'email': 'alice@example.com',
-            'password': 'alice123',
+            'password': 'Alice@123',
         },
     )
 
@@ -20,6 +20,20 @@ def test_create_user(client):
         'username': 'alice',
         'email': 'alice@example.com',
     }
+
+
+def test_create_user_with_weak_password(client):
+    response = client.post(
+        '/users',
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': '123bob',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_CONTENT
+    assert response.json() == {'detail': 'Weak password'}
 
 
 def test_create_user_already_exists(client, user):

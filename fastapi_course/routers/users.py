@@ -17,6 +17,7 @@ from fastapi_course.schemas import (
     UserSchema,
 )
 from fastapi_course.security import get_current_user, get_password_hash
+from fastapi_course.services import validate_password
 
 router = APIRouter(prefix='/users', tags=['users'])
 
@@ -32,6 +33,12 @@ Session = Annotated[AsyncSession, Depends(get_session)]
     response_model=UserPublic,
 )
 async def create_user(user: UserSchema, session: Session):
+    if not validate_password(user.password):
+        raise HTTPException(
+            status_code=HTTPStatus.UNPROCESSABLE_CONTENT,
+            detail='Weak password',
+        )
+
     db_user = await session.scalar(
         select(User).where(
             (User.username == user.username) | (User.email == user.email)
