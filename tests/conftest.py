@@ -28,7 +28,7 @@ class UserFactory(factory.Factory):
 
     username = factory.Sequence(lambda n: f'test{n}')
     email = factory.LazyAttribute(lambda obj: f'{obj.username}@test.com')
-    password = factory.LazyAttribute(lambda obj: f'{obj.username}#123')
+    password = factory.LazyAttribute(lambda obj: f'{obj.username}#12345')
 
 
 class TodoFactory(factory.Factory):
@@ -99,7 +99,7 @@ def mock_db_time():
 
 @pytest_asyncio.fixture
 async def user(session: AsyncSession):
-    password = 'test123'
+    password = 'Test@123'
 
     user = UserFactory(password=get_password_hash(password))
 
@@ -113,7 +113,7 @@ async def user(session: AsyncSession):
 
 @pytest_asyncio.fixture
 async def other_user(session: AsyncSession):
-    password = 'test123'
+    password = 'tTest123@'
 
     user = UserFactory(password=get_password_hash(password))
 
