@@ -113,7 +113,7 @@ async def user(session: AsyncSession):
 
 @pytest_asyncio.fixture
 async def other_user(session: AsyncSession):
-    password = 'test123'
+    password = 'tTest123@'
 
     user = UserFactory(password=get_password_hash(password))
 

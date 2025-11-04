@@ -39,6 +39,12 @@ async def create_user(user: UserSchema, session: Session):
             detail='Weak password',
         )
 
+    if user.password != user.confirm_password:
+        raise HTTPException(
+            status_code=HTTPStatus.UNPROCESSABLE_CONTENT,
+            detail='The passwords must be the same',
+        )
+
     db_user = await session.scalar(
         select(User).where(
             (User.username == user.username) | (User.email == user.email)
@@ -116,6 +122,18 @@ async def update_user(
     if current_user.id != user_id:
         raise HTTPException(
             status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
+        )
+
+    if not validate_password(user.password):
+        raise HTTPException(
+            status_code=HTTPStatus.UNPROCESSABLE_CONTENT,
+            detail='Weak password',
+        )
+
+    if user.password != user.confirm_password:
+        raise HTTPException(
+            status_code=HTTPStatus.UNPROCESSABLE_CONTENT,
+            detail='The passwords must be the same',
         )
 
     try:
